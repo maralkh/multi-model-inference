@@ -1,69 +1,21 @@
-# Extract manifold-specific and GloVe information
-        uncertainty = getattr(analysis, 'uncertainty_estimate', 0.0)
-        best_manifold = getattr(analysis, 'best_manifold', 'unknown')
-        manifold_confidence = analysis.features.get('manifold_confidence', 0.0)
-        traditional_confidence = analysis.features.get('traditional_confidence', 0.0)
-        
-        # GloVe-specific features
-        glove_coherence = analysis.features.get('glove_semantic_coherence', 0.0)
-        glove_embedding_norm = analysis.features.get('glove_embedding_norm', 0.0)
-        glove_math_sim = analysis.features.get('glove_math_similarity', 0.0)
-        glove_creative_sim = analysis.features.get('glove_creative_similarity', 0.0)
-        
-        print(f"  📊 Task Type: {task_type}")
-        print(f"  🎯 Confidence: {confidence:.3f}")
-        print(f"  🔮 Uncertainty: {uncertainty:.3f}")
-        print(f"  🌐 Best Manifold: {best_manifold}")
-        print(f"  📈 Complexity: {complexity:.3f}")
-        print(f"  🔑 Keywords: {', '.join(keywords)}")
-        print(f"  🏷️ Domains: {', '.join(domains) if domains else 'None'}")
-        print(f"  ⚡ Analysis Time: {analysis_time:.4f}s")
-        
-        # GloVe semantic information
-        if glove_embedding_norm > 0:
-            print(f"  🎭 GloVe Features:")
-            print(f"    Semantic Coherence: {glove_coherence:.3f}")
-            print(f"    Embedding Strength: {glove_embedding_norm:.3f}")
-            print(f"    Math Similarity: {glove_math_sim:.3f}")
-            print(f"    Creative Similarity: {glove_creative_sim:.3f}")
-        
-        if manifold_confidence > 0:
-            print(f"  🔄 Method Comparison:")
-            print(f"    Traditional: {traditional_confidence:.3f}")
-            print(f"    Manifold: {manifold_confidence:.3f}")
-        
-        results.append({
-            'text': test_text,
-            'task_type': task_type,
-            'confidence': confidence,
-            'uncertainty': uncertainty,
-            'best_manifold': best_manifold,
-            'complexity': complexity,
-            'keywords': keywords,
-            'domains': domains,
-            'analysis_time': analysis_time,
-            'manifold_confidence': manifold_confidence,
-            'traditional_confidence': traditional_confidence,
-            'glove_coherence': glove_coherence,
-            'glove_embedding_norm': glove_embedding_norm,
-            'glove_math_sim': glove_math_sim,
-            'glove_creative_sim': glove_creative_sim
-        })# File: examples/enhanced_classifier_demo.py
-"""Demonstration of enhanced input classifier with manifold learning"""
+# File: examples/complete_enhanced_classifier_demo.py
+"""Complete demonstration of enhanced input classifier with TF-IDF + GloVe + Manifold learning"""
 
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Dict, Any
 import time
+from sklearn.metrics.pairwise import cosine_similarity
 
 from core.input_classifier import EnhancedInputClassifier
 from core.types import TaskType, ManifoldLearningConfig
+from core.glove_embeddings import GloVeEmbeddings
 
 def demonstrate_enhanced_classification():
     """Demonstrate enhanced classification capabilities"""
     
-    print("🧠 Enhanced Input Classifier with Manifold Learning")
-    print("=" * 55)
+    print("🧠 Enhanced Input Classifier with TF-IDF + GloVe + Manifold Learning")
+    print("=" * 70)
     
     # Create enhanced classifier with GloVe embeddings
     manifold_config = ManifoldLearningConfig(
@@ -185,7 +137,7 @@ def demonstrate_enhanced_classification():
     ]
     
     print(f"\n🧪 Testing enhanced classifier with {len(test_cases)} cases...")
-    print("=" * 60)
+    print("=" * 70)
     
     results = []
     
@@ -204,11 +156,17 @@ def demonstrate_enhanced_classification():
         keywords = analysis.keywords[:3]  # Top 3 keywords
         domains = analysis.domain_indicators
         
-        # Extract manifold-specific information
+        # Extract manifold-specific and GloVe information
         uncertainty = getattr(analysis, 'uncertainty_estimate', 0.0)
         best_manifold = getattr(analysis, 'best_manifold', 'unknown')
         manifold_confidence = analysis.features.get('manifold_confidence', 0.0)
         traditional_confidence = analysis.features.get('traditional_confidence', 0.0)
+        
+        # GloVe-specific features
+        glove_coherence = analysis.features.get('glove_semantic_coherence', 0.0)
+        glove_embedding_norm = analysis.features.get('glove_embedding_norm', 0.0)
+        glove_math_sim = analysis.features.get('glove_math_similarity', 0.0)
+        glove_creative_sim = analysis.features.get('glove_creative_similarity', 0.0)
         
         print(f"  📊 Task Type: {task_type}")
         print(f"  🎯 Confidence: {confidence:.3f}")
@@ -218,6 +176,14 @@ def demonstrate_enhanced_classification():
         print(f"  🔑 Keywords: {', '.join(keywords)}")
         print(f"  🏷️ Domains: {', '.join(domains) if domains else 'None'}")
         print(f"  ⚡ Analysis Time: {analysis_time:.4f}s")
+        
+        # GloVe semantic information
+        if glove_embedding_norm > 0:
+            print(f"  🎭 GloVe Features:")
+            print(f"    Semantic Coherence: {glove_coherence:.3f}")
+            print(f"    Embedding Strength: {glove_embedding_norm:.3f}")
+            print(f"    Math Similarity: {glove_math_sim:.3f}")
+            print(f"    Creative Similarity: {glove_creative_sim:.3f}")
         
         if manifold_confidence > 0:
             print(f"  🔄 Method Comparison:")
@@ -235,7 +201,11 @@ def demonstrate_enhanced_classification():
             'domains': domains,
             'analysis_time': analysis_time,
             'manifold_confidence': manifold_confidence,
-            'traditional_confidence': traditional_confidence
+            'traditional_confidence': traditional_confidence,
+            'glove_coherence': glove_coherence,
+            'glove_embedding_norm': glove_embedding_norm,
+            'glove_math_sim': glove_math_sim,
+            'glove_creative_sim': glove_creative_sim
         })
     
     return results, classifier
@@ -243,8 +213,8 @@ def demonstrate_enhanced_classification():
 def analyze_classifier_performance(results: List[Dict], classifier: EnhancedInputClassifier):
     """Analyze the performance of the enhanced classifier"""
     
-    print(f"\n📊 Classifier Performance Analysis")
-    print("=" * 40)
+    print(f"\n📊 Enhanced Classifier Performance Analysis")
+    print("=" * 50)
     
     # Task distribution
     task_distribution = {}
@@ -257,24 +227,24 @@ def analyze_classifier_performance(results: List[Dict], classifier: EnhancedInpu
         percentage = (count / len(results)) * 100
         print(f"  {task}: {count} ({percentage:.1f}%)")
     
-    # Confidence statistics
+    # Confidence and uncertainty statistics
     confidences = [r['confidence'] for r in results]
     uncertainties = [r['uncertainty'] for r in results]
     complexities = [r['complexity'] for r in results]
     
-    print(f"\n📊 Statistics:")
+    print(f"\n📊 Classification Statistics:")
     print(f"  Average Confidence: {np.mean(confidences):.3f} ± {np.std(confidences):.3f}")
     print(f"  Average Uncertainty: {np.mean(uncertainties):.3f} ± {np.std(uncertainties):.3f}")
     print(f"  Average Complexity: {np.mean(complexities):.3f} ± {np.std(complexities):.3f}")
     print(f"  Analysis Time Range: {min(r['analysis_time'] for r in results):.4f}s - {max(r['analysis_time'] for r in results):.4f}s")
     
-    # Manifold usage
+    # Manifold usage patterns
     manifold_usage = {}
     for result in results:
         manifold = result['best_manifold']
         manifold_usage[manifold] = manifold_usage.get(manifold, 0) + 1
     
-    print(f"\n🌐 Manifold Usage:")
+    print(f"\n🌐 Manifold Usage Distribution:")
     for manifold, count in manifold_usage.items():
         percentage = (count / len(results)) * 100
         print(f"  {manifold}: {count} ({percentage:.1f}%)")
@@ -289,10 +259,11 @@ def analyze_classifier_performance(results: List[Dict], classifier: EnhancedInpu
         print(f"  Average Embedding Strength: {np.mean(glove_norms):.3f} ± {np.std(glove_norms):.3f}")
         
         # Correlation between semantic features and confidence
-        coherence_confidence_corr = np.corrcoef(glove_coherences, confidences)[0, 1]
-        print(f"  Coherence-Confidence Correlation: {coherence_confidence_corr:.3f}")
+        if len(glove_coherences) > 1:
+            coherence_confidence_corr = np.corrcoef(glove_coherences, confidences)[0, 1]
+            print(f"  Coherence-Confidence Correlation: {coherence_confidence_corr:.3f}")
     
-    # Method comparison (where available)
+    # Method comparison analysis
     method_comparisons = [(r['traditional_confidence'], r['manifold_confidence']) 
                          for r in results if r['manifold_confidence'] > 0]
     
@@ -300,42 +271,52 @@ def analyze_classifier_performance(results: List[Dict], classifier: EnhancedInpu
         trad_scores = [mc[0] for mc in method_comparisons]
         manifold_scores = [mc[1] for mc in method_comparisons]
         
-        print(f"\n⚖️ Method Comparison:")
+        print(f"\n⚖️ Method Comparison Analysis:")
         print(f"  Traditional Average: {np.mean(trad_scores):.3f}")
         print(f"  Manifold Average: {np.mean(manifold_scores):.3f}")
         
-        # Count where manifold was better
+        # Count where each method was better
         manifold_better = sum(1 for t, m in method_comparisons if m > t)
+        traditional_better = sum(1 for t, m in method_comparisons if t > m)
+        tied = len(method_comparisons) - manifold_better - traditional_better
+        
         print(f"  Manifold Better: {manifold_better}/{len(method_comparisons)} ({manifold_better/len(method_comparisons)*100:.1f}%)")
+        print(f"  Traditional Better: {traditional_better}/{len(method_comparisons)} ({traditional_better/len(method_comparisons)*100:.1f}%)")
+        print(f"  Tied: {tied}/{len(method_comparisons)} ({tied/len(method_comparisons)*100:.1f}%)")
     
-    # Get classifier statistics
+    # Get classifier internal statistics
     classifier_stats = classifier.get_classification_statistics()
-    print(f"\n🔍 Classifier Internal Stats:")
+    print(f"\n🔍 Classifier Internal Statistics:")
     for key, value in classifier_stats.items():
-        if key != 'task_specific_stats' and key != 'manifold_diagnostics':
+        if key not in ['task_specific_stats', 'manifold_diagnostics']:
             print(f"  {key}: {value}")
 
-def create_visualization(results: List[Dict]):
-    """Create visualizations of classifier results"""
+def create_comprehensive_visualization(results: List[Dict]):
+    """Create comprehensive visualizations of classifier results"""
     
-    print(f"\n📈 Creating Performance Visualizations...")
+    print(f"\n📈 Creating Comprehensive Performance Visualizations...")
     
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+    fig = plt.figure(figsize=(20, 16))
     
-    # 1. Confidence vs Uncertainty scatter
+    # Create a 3x3 grid of subplots
+    gs = fig.add_gridspec(3, 3, hspace=0.3, wspace=0.3)
+    
+    # 1. Confidence vs Uncertainty colored by GloVe coherence
+    ax1 = fig.add_subplot(gs[0, 0])
     confidences = [r['confidence'] for r in results]
     uncertainties = [r['uncertainty'] for r in results]
-    complexities = [r['complexity'] for r in results]
+    glove_coherences = [r['glove_coherence'] for r in results]
     
-    scatter = ax1.scatter(confidences, uncertainties, c=complexities, 
+    scatter = ax1.scatter(confidences, uncertainties, c=glove_coherences, 
                          cmap='viridis', alpha=0.7, s=60)
     ax1.set_xlabel('Confidence')
     ax1.set_ylabel('Uncertainty')
-    ax1.set_title('Confidence vs Uncertainty (colored by Complexity)')
+    ax1.set_title('Confidence vs Uncertainty\n(colored by GloVe Coherence)')
     ax1.grid(True, alpha=0.3)
-    plt.colorbar(scatter, ax=ax1, label='Complexity')
+    plt.colorbar(scatter, ax=ax1, label='Semantic Coherence')
     
     # 2. Task type distribution
+    ax2 = fig.add_subplot(gs[0, 1])
     task_counts = {}
     for result in results:
         task = result['task_type'].replace('_', ' ').title()
@@ -344,13 +325,19 @@ def create_visualization(results: List[Dict]):
     tasks = list(task_counts.keys())
     counts = list(task_counts.values())
     
-    ax2.bar(tasks, counts, color='skyblue', alpha=0.7)
+    bars = ax2.bar(tasks, counts, color='skyblue', alpha=0.7)
     ax2.set_ylabel('Count')
     ax2.set_title('Task Type Distribution')
     ax2.tick_params(axis='x', rotation=45)
     ax2.grid(True, alpha=0.3, axis='y')
     
-    # 3. Manifold distribution
+    # Add value labels on bars
+    for bar, count in zip(bars, counts):
+        ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
+                str(count), ha='center', va='bottom')
+    
+    # 3. Manifold distribution pie chart
+    ax3 = fig.add_subplot(gs[0, 2])
     manifold_counts = {}
     for result in results:
         manifold = result['best_manifold']
@@ -363,127 +350,24 @@ def create_visualization(results: List[Dict]):
     ax3.pie(m_counts, labels=manifolds, autopct='%1.1f%%', colors=colors)
     ax3.set_title('Best Manifold Distribution')
     
-    # 4. Method comparison (where available)
-    method_data = []
-    labels = []
+    # 4. Semantic coherence vs confidence
+    ax4 = fig.add_subplot(gs[1, 0])
+    ax4.scatter(glove_coherences, confidences, alpha=0.7, color='purple')
     
-    for i, result in enumerate(results):
-        if result['manifold_confidence'] > 0:
-            method_data.append([result['traditional_confidence'], result['manifold_confidence']])
-            labels.append(f"Test {i+1}")
+    # Add trend line
+    if len(glove_coherences) > 1 and np.std(glove_coherences) > 0:
+        z = np.polyfit(glove_coherences, confidences, 1)
+        p = np.poly1d(z)
+        x_trend = np.linspace(min(glove_coherences), max(glove_coherences), 100)
+        ax4.plot(x_trend, p(x_trend), "r--", alpha=0.8)
     
-    if method_data:
-        method_array = np.array(method_data)
-        x_pos = np.arange(len(labels))
-        
-        ax4.bar(x_pos - 0.2, method_array[:, 0], 0.4, 
-               label='Traditional', alpha=0.7, color='blue')
-        ax4.bar(x_pos + 0.2, method_array[:, 1], 0.4,
-               label='Manifold', alpha=0.7, color='red')
-        
-        ax4.set_xlabel('Test Cases')
-        ax4.set_ylabel('Confidence')
-        ax4.set_title('Traditional vs Manifold Confidence')
-        ax4.set_xticks(x_pos)
-        ax4.set_xticklabels([f"T{i+1}" for i in range(len(labels))], rotation=45)
-        ax4.legend()
-        ax4.grid(True, alpha=0.3, axis='y')
-    else:
-        ax4.text(0.5, 0.5, 'No manifold comparison data', 
-                ha='center', va='center', transform=ax4.transAxes)
-        ax4.set_title('Method Comparison (No Data)')
+    ax4.set_xlabel('GloVe Semantic Coherence')
+    ax4.set_ylabel('Classification Confidence')
+    ax4.set_title('Semantic Coherence vs\nClassification Confidence')
+    ax4.grid(True, alpha=0.3)
     
-    plt.tight_layout()
-    plt.savefig('enhanced_classifier_analysis.png', dpi=300, bbox_inches='tight')
-    print(f"📊 Visualization saved as 'enhanced_classifier_analysis.png'")
-    
-    plt.close()
-
-def demonstrate_online_learning(classifier: EnhancedInputClassifier):
-    """Demonstrate online learning capabilities"""
-    
-    print(f"\n🔄 Online Learning Demonstration")
-    print("=" * 35)
-    
-    # Simulate user feedback and online updates
-    feedback_examples = [
-        {
-            'text': "Optimize the machine learning hyperparameters",
-            'predicted': TaskType.CODE_GENERATION,
-            'actual': TaskType.MATHEMATICAL,
-            'score': 0.3  # Poor performance, need correction
-        },
-        {
-            'text': "Write a compelling character backstory",
-            'predicted': TaskType.CREATIVE_WRITING,
-            'actual': TaskType.CREATIVE_WRITING,
-            'score': 0.9  # Good performance
-        },
-        {
-            'text': "Analyze the philosophical implications of consciousness",
-            'predicted': TaskType.REASONING,
-            'actual': TaskType.REASONING,
-            'score': 0.85  # Good performance
-        },
-        {
-            'text': "Debug the memory leak in this C++ code",
-            'predicted': TaskType.SCIENTIFIC,
-            'actual': TaskType.CODE_GENERATION,
-            'score': 0.2  # Poor performance, need correction
-        }
-    ]
-    
-    print(f"📚 Processing {len(feedback_examples)} feedback examples...")
-    
-    for i, feedback in enumerate(feedback_examples, 1):
-        print(f"\n[{i}] Feedback: {feedback['text'][:40]}...")
-        print(f"  Predicted: {feedback['predicted'].value}")
-        print(f"  Actual: {feedback['actual'].value}")
-        print(f"  Performance: {feedback['score']:.2f}")
-        print(f"  Correct: {'✅' if feedback['predicted'] == feedback['actual'] else '❌'}")
-        
-        # Update classifier with feedback
-        classifier.update_performance(
-            text=feedback['text'],
-            predicted_task=feedback['predicted'],
-            actual_task=feedback['actual'],
-            performance_score=feedback['score']
-        )
-    
-    # Show updated statistics
-    print(f"\n📊 Updated Classifier Statistics:")
-    stats = classifier.get_classification_statistics()
-    
-    print(f"  Overall Accuracy: {stats['overall_accuracy']:.2%}")
-    print(f"  Total Predictions: {stats['total_predictions']}")
-    print(f"  Average Performance Score: {stats['average_performance_score']:.3f}")
-    
-    if 'task_specific_stats' in stats:
-        print(f"  Task-Specific Performance:")
-        for task, task_stats in stats['task_specific_stats'].items():
-            print(f"    {task}: {task_stats['accuracy']:.2%} ({task_stats['correct_samples']}/{task_stats['total_samples']})")
-
-def create_visualization(results: List[Dict]):
-    """Create visualizations of classifier results including GloVe features"""
-    
-    print(f"\n📈 Creating Performance Visualizations...")
-    
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
-    
-    # 1. Confidence vs Uncertainty colored by GloVe coherence
-    confidences = [r['confidence'] for r in results]
-    uncertainties = [r['uncertainty'] for r in results]
-    glove_coherences = [r['glove_coherence'] for r in results]
-    
-    scatter = ax1.scatter(confidences, uncertainties, c=glove_coherences, 
-                         cmap='viridis', alpha=0.7, s=60)
-    ax1.set_xlabel('Confidence')
-    ax1.set_ylabel('Uncertainty')
-    ax1.set_title('Confidence vs Uncertainty (colored by GloVe Coherence)')
-    ax1.grid(True, alpha=0.3)
-    plt.colorbar(scatter, ax=ax1, label='Semantic Coherence')
-    
-    # 2. Task-specific GloVe similarities
+    # 5. Task-specific GloVe similarities
+    ax5 = fig.add_subplot(gs[1, 1])
     task_glove_data = {}
     for result in results:
         task = result['task_type'].replace('_', ' ').title()
@@ -496,41 +380,74 @@ def create_visualization(results: List[Dict]):
         })
     
     # Create grouped bar chart for task similarities
-    tasks = list(task_glove_data.keys())
-    math_sims = [np.mean([d['math_sim'] for d in task_glove_data[task]]) for task in tasks]
-    creative_sims = [np.mean([d['creative_sim'] for d in task_glove_data[task]]) for task in tasks]
+    task_names = list(task_glove_data.keys())
+    math_sims = [np.mean([d['math_sim'] for d in task_glove_data[task]]) for task in task_names]
+    creative_sims = [np.mean([d['creative_sim'] for d in task_glove_data[task]]) for task in task_names]
     
-    x_pos = np.arange(len(tasks))
+    x_pos = np.arange(len(task_names))
     width = 0.35
     
-    ax2.bar(x_pos - width/2, math_sims, width, label='Math Similarity', alpha=0.7)
-    ax2.bar(x_pos + width/2, creative_sims, width, label='Creative Similarity', alpha=0.7)
+    ax5.bar(x_pos - width/2, math_sims, width, label='Math Similarity', alpha=0.7, color='orange')
+    ax5.bar(x_pos + width/2, creative_sims, width, label='Creative Similarity', alpha=0.7, color='green')
     
-    ax2.set_xlabel('Task Types')
-    ax2.set_ylabel('GloVe Similarity Score')
-    ax2.set_title('Task-Specific GloVe Similarities')
-    ax2.set_xticks(x_pos)
-    ax2.set_xticklabels(tasks, rotation=45, ha='right')
-    ax2.legend()
-    ax2.grid(True, alpha=0.3, axis='y')
+    ax5.set_xlabel('Task Types')
+    ax5.set_ylabel('GloVe Similarity Score')
+    ax5.set_title('Task-Specific GloVe Similarities')
+    ax5.set_xticks(x_pos)
+    ax5.set_xticklabels(task_names, rotation=45, ha='right')
+    ax5.legend()
+    ax5.grid(True, alpha=0.3, axis='y')
     
-    # 3. Semantic coherence vs confidence
-    ax3.scatter(glove_coherences, confidences, alpha=0.7, color='purple')
+    # 6. Method comparison (where available)
+    ax6 = fig.add_subplot(gs[1, 2])
+    method_data = []
+    labels = []
     
-    # Add trend line
-    if len(glove_coherences) > 1:
-        z = np.polyfit(glove_coherences, confidences, 1)
+    for i, result in enumerate(results):
+        if result['manifold_confidence'] > 0:
+            method_data.append([result['traditional_confidence'], result['manifold_confidence']])
+            labels.append(f"Test {i+1}")
+    
+    if method_data:
+        method_array = np.array(method_data)
+        x_pos = np.arange(len(labels))
+        
+        ax6.bar(x_pos - 0.2, method_array[:, 0], 0.4, 
+               label='Traditional', alpha=0.7, color='blue')
+        ax6.bar(x_pos + 0.2, method_array[:, 1], 0.4,
+               label='Manifold', alpha=0.7, color='red')
+        
+        ax6.set_xlabel('Test Cases')
+        ax6.set_ylabel('Confidence')
+        ax6.set_title('Traditional vs Manifold\nConfidence Comparison')
+        ax6.set_xticks(x_pos)
+        ax6.set_xticklabels([f"T{i+1}" for i in range(len(labels))], rotation=45)
+        ax6.legend()
+        ax6.grid(True, alpha=0.3, axis='y')
+    else:
+        ax6.text(0.5, 0.5, 'No manifold\ncomparison data', 
+                ha='center', va='center', transform=ax6.transAxes)
+        ax6.set_title('Method Comparison\n(No Data)')
+    
+    # 7. Complexity vs Confidence
+    ax7 = fig.add_subplot(gs[2, 0])
+    complexities = [r['complexity'] for r in results]
+    ax7.scatter(complexities, confidences, alpha=0.7, color='brown')
+    
+    if len(complexities) > 1 and np.std(complexities) > 0:
+        z = np.polyfit(complexities, confidences, 1)
         p = np.poly1d(z)
-        ax3.plot(glove_coherences, p(glove_coherences), "r--", alpha=0.8)
+        x_trend = np.linspace(min(complexities), max(complexities), 100)
+        ax7.plot(x_trend, p(x_trend), "r--", alpha=0.8)
     
-    ax3.set_xlabel('GloVe Semantic Coherence')
-    ax3.set_ylabel('Classification Confidence')
-    ax3.set_title('Semantic Coherence vs Classification Confidence')
-    ax3.grid(True, alpha=0.3)
+    ax7.set_xlabel('Complexity Score')
+    ax7.set_ylabel('Confidence')
+    ax7.set_title('Complexity vs Confidence')
+    ax7.grid(True, alpha=0.3)
     
-    # 4. Feature importance comparison
-    feature_names = ['Traditional', 'Manifold', 'GloVe Coherence', 'GloVe Strength']
-    feature_values = []
+    # 8. Feature importance comparison
+    ax8 = fig.add_subplot(gs[2, 1])
+    feature_names = ['Traditional', 'Manifold', 'GloVe\nCoherence', 'GloVe\nStrength']
     
     # Calculate average feature contributions
     traditional_scores = [r['traditional_confidence'] for r in results if r['traditional_confidence'] > 0]
@@ -546,21 +463,40 @@ def create_visualization(results: List[Dict]):
     ]
     
     colors = ['blue', 'red', 'green', 'orange']
-    bars = ax4.bar(feature_names, feature_values, color=colors, alpha=0.7)
+    bars = ax8.bar(feature_names, feature_values, color=colors, alpha=0.7)
     
-    ax4.set_ylabel('Average Score')
-    ax4.set_title('Feature Method Comparison')
-    ax4.tick_params(axis='x', rotation=45)
-    ax4.grid(True, alpha=0.3, axis='y')
+    ax8.set_ylabel('Average Score')
+    ax8.set_title('Feature Method\nComparison')
+    ax8.tick_params(axis='x', rotation=0)
+    ax8.grid(True, alpha=0.3, axis='y')
     
     # Add value labels on bars
     for bar, value in zip(bars, feature_values):
-        ax4.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+        ax8.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
                 f'{value:.3f}', ha='center', va='bottom')
     
-    plt.tight_layout()
-    plt.savefig('enhanced_classifier_with_glove.png', dpi=300, bbox_inches='tight')
-    print(f"📊 Visualization saved as 'enhanced_classifier_with_glove.png'")
+    # 9. Analysis time distribution
+    ax9 = fig.add_subplot(gs[2, 2])
+    analysis_times = [r['analysis_time'] for r in results]
+    
+    ax9.hist(analysis_times, bins=8, alpha=0.7, color='cyan', edgecolor='black')
+    ax9.set_xlabel('Analysis Time (seconds)')
+    ax9.set_ylabel('Frequency')
+    ax9.set_title('Analysis Time Distribution')
+    ax9.grid(True, alpha=0.3, axis='y')
+    
+    # Add statistics
+    mean_time = np.mean(analysis_times)
+    std_time = np.std(analysis_times)
+    ax9.axvline(mean_time, color='red', linestyle='--', alpha=0.8, 
+               label=f'Mean: {mean_time:.4f}s')
+    ax9.legend()
+    
+    plt.suptitle('Enhanced Classifier with TF-IDF + GloVe + Manifold Learning\nComprehensive Performance Analysis', 
+                 fontsize=16, y=0.98)
+    
+    plt.savefig('comprehensive_classifier_analysis.png', dpi=300, bbox_inches='tight')
+    print(f"📊 Comprehensive visualization saved as 'comprehensive_classifier_analysis.png'")
     
     plt.close()
 
@@ -568,36 +504,39 @@ def demonstrate_glove_semantic_analysis(classifier: EnhancedInputClassifier):
     """Demonstrate GloVe semantic analysis capabilities"""
     
     print(f"\n🎭 GloVe Semantic Analysis Demonstration")
-    print("=" * 45)
+    print("=" * 50)
     
-    # Test semantic similarity
+    # Test semantic similarity between word pairs
     word_pairs = [
         ('algorithm', 'code'),
         ('story', 'narrative'),
         ('equation', 'mathematics'),
         ('research', 'science'),
         ('analyze', 'evaluate'),
-        ('hello', 'greeting')
+        ('hello', 'greeting'),
+        ('function', 'method'),
+        ('creative', 'imagination')
     ]
     
     print(f"🔗 Word Similarity Analysis:")
     for word1, word2 in word_pairs:
         similarity = classifier.glove_embeddings.get_similarity(word1, word2)
-        print(f"  {word1} ↔ {word2}: {similarity:.3f}")
+        print(f"  {word1:12} ↔ {word2:12}: {similarity:.3f}")
     
-    # Find similar words
+    # Find similar words for key terms
     print(f"\n🎯 Finding Similar Words:")
-    test_words = ['algorithm', 'creative', 'analyze', 'equation']
+    test_words = ['algorithm', 'creative', 'analyze', 'equation', 'story', 'debug']
     
     for word in test_words:
         similar_words = classifier.glove_embeddings.find_similar_words(word, top_k=3)
         if similar_words:
-            print(f"  '{word}' → {', '.join([f'{w}({s:.2f})' for w, s in similar_words])}")
+            similar_str = ', '.join([f'{w}({s:.2f})' for w, s in similar_words])
+            print(f"  '{word}' → {similar_str}")
         else:
             print(f"  '{word}' → No similar words found")
     
     # Semantic clustering of different text types
-    print(f"\n🗂️ Semantic Text Clustering:")
+    print(f"\n🗂️ Semantic Text Clustering Analysis:")
     
     sample_texts = [
         "Solve the quadratic equation using the formula",
@@ -619,10 +558,9 @@ def demonstrate_glove_semantic_analysis(classifier: EnhancedInputClassifier):
     embeddings = np.array(embeddings)
     
     # Compute similarity matrix
-    from sklearn.metrics.pairwise import cosine_similarity
     similarity_matrix = cosine_similarity(embeddings)
     
-    print(f"  Semantic Similarity Matrix (top 3 pairs):")
+    print(f"  Semantic Similarity Matrix (top 5 pairs):")
     # Find most similar text pairs
     similar_pairs = []
     for i in range(len(sample_texts)):
@@ -632,85 +570,333 @@ def demonstrate_glove_semantic_analysis(classifier: EnhancedInputClassifier):
     
     similar_pairs.sort(key=lambda x: x[2], reverse=True)
     
-    for i, (idx1, idx2, sim) in enumerate(similar_pairs[:3]):
-        text1_short = sample_texts[idx1][:30] + "..."
-        text2_short = sample_texts[idx2][:30] + "..."
-        print(f"    {i+1}. {text1_short} ↔ {text2_short} ({sim:.3f})")
+    for idx, (i, j, sim) in enumerate(similar_pairs[:5]):
+        text1_short = sample_texts[i][:35] + "..."
+        text2_short = sample_texts[j][:35] + "..."
+        print(f"    {idx+1}. {text1_short}")
+        print(f"       ↔ {text2_short}")
+        print(f"       Similarity: {sim:.3f}")
+        print()
+    
+    # Task-domain semantic analysis
+    print(f"📊 Task-Domain Semantic Analysis:")
+    
+    domain_texts = {
+        'Mathematical': ['solve equation', 'calculate derivative', 'matrix multiplication'],
+        'Creative': ['write story', 'create character', 'compose poem'],
+        'Programming': ['implement algorithm', 'debug code', 'write function'],
+        'Scientific': ['conduct experiment', 'test hypothesis', 'analyze data']
+    }
+    
+    # Calculate inter-domain similarities
+    domain_similarities = {}
+    for domain1, texts1 in domain_texts.items():
+        for domain2, texts2 in domain_texts.items():
+            if domain1 != domain2:
+                similarities = []
+                for text1 in texts1:
+                    emb1 = classifier.glove_embeddings.get_sentence_embedding(text1)
+                    for text2 in texts2:
+                        emb2 = classifier.glove_embeddings.get_sentence_embedding(text2)
+                        sim = cosine_similarity([emb1], [emb2])[0, 0]
+                        similarities.append(sim)
+                
+                avg_sim = np.mean(similarities)
+                domain_similarities[f"{domain1}-{domain2}"] = avg_sim
+                print(f"  {domain1:12} ↔ {domain2:12}: {avg_sim:.3f}")
+
+def demonstrate_online_learning(classifier: EnhancedInputClassifier):
+    """Demonstrate online learning and adaptation capabilities"""
+    
+    print(f"\n🔄 Online Learning and Adaptation Demonstration")
+    print("=" * 55)
+    
+    # Get initial performance baseline
+    print("📊 Initial Classifier State:")
+    initial_stats = classifier.get_classification_statistics()
+    print(f"  Cache Size: {initial_stats.get('cache_size', 0)}")
+    print(f"  Training History: {initial_stats.get('total_predictions', 0)} predictions")
+    
+    # Simulate user feedback scenarios
+    feedback_scenarios = [
+        {
+            'text': "Optimize the machine learning hyperparameters using grid search",
+            'predicted': TaskType.CODE_GENERATION,
+            'actual': TaskType.MATHEMATICAL,
+            'score': 0.3,
+            'reason': 'Optimization is more mathematical than coding'
+        },
+        {
+            'text': "Write a compelling character backstory for the protagonist",
+            'predicted': TaskType.CREATIVE_WRITING,
+            'actual': TaskType.CREATIVE_WRITING,
+            'score': 0.95,
+            'reason': 'Perfect classification for creative writing'
+        },
+        {
+            'text': "Analyze the philosophical implications of artificial consciousness",
+            'predicted': TaskType.REASONING,
+            'actual': TaskType.REASONING,
+            'score': 0.88,
+            'reason': 'Good reasoning task identification'
+        },
+        {
+            'text': "Debug the memory leak in this C++ application",
+            'predicted': TaskType.SCIENTIFIC,
+            'actual': TaskType.CODE_GENERATION,
+            'score': 0.25,
+            'reason': 'Debugging is coding, not scientific research'
+        },
+        {
+            'text': "Calculate the statistical significance of the experimental results",
+            'predicted': TaskType.MATHEMATICAL,
+            'actual': TaskType.SCIENTIFIC,
+            'score': 0.4,
+            'reason': 'Statistical analysis in scientific context'
+        }
+    ]
+    
+    print(f"\n📚 Processing {len(feedback_scenarios)} feedback scenarios...")
+    
+    performance_progression = []
+    
+    for i, scenario in enumerate(feedback_scenarios, 1):
+        print(f"\n[{i}] Scenario: {scenario['text'][:45]}...")
+        print(f"  Predicted: {scenario['predicted'].value}")
+        print(f"  Actual: {scenario['actual'].value}")
+        print(f"  Performance: {scenario['score']:.2f}")
+        print(f"  Reason: {scenario['reason']}")
+        print(f"  Correct: {'✅' if scenario['predicted'] == scenario['actual'] else '❌'}")
+        
+        # Re-analyze after each update to see improvement
+        analysis_before = classifier.analyze_input(scenario['text'])
+        confidence_before = analysis_before.confidence
+        
+        # Update classifier with feedback
+        classifier.update_performance(
+            text=scenario['text'],
+            predicted_task=scenario['predicted'],
+            actual_task=scenario['actual'],
+            performance_score=scenario['score']
+        )
+        
+        # Analyze again to see changes
+        analysis_after = classifier.analyze_input(scenario['text'])
+        confidence_after = analysis_after.confidence
+        
+        print(f"  Confidence Change: {confidence_before:.3f} → {confidence_after:.3f} "
+              f"({confidence_after - confidence_before:+.3f})")
+        
+        performance_progression.append({
+            'scenario': i,
+            'correct': scenario['predicted'] == scenario['actual'],
+            'score': scenario['score'],
+            'confidence_before': confidence_before,
+            'confidence_after': confidence_after
+        })
+    
+    # Show updated statistics
+    print(f"\n📊 Updated Classifier Performance:")
+    final_stats = classifier.get_classification_statistics()
+    
+    print(f"  Overall Accuracy: {final_stats['overall_accuracy']:.2%}")
+    print(f"  Total Predictions: {final_stats['total_predictions']}")
+    print(f"  Average Performance Score: {final_stats['average_performance_score']:.3f}")
+    
+    if 'task_specific_stats' in final_stats:
+        print(f"  Task-Specific Performance:")
+        for task, task_stats in final_stats['task_specific_stats'].items():
+            accuracy = task_stats['accuracy']
+            correct = task_stats['correct_samples']
+            total = task_stats['total_samples']
+            print(f"    {task:15}: {accuracy:.2%} ({correct}/{total})")
+    
+    # Learning progression analysis
+    print(f"\n📈 Learning Progression Analysis:")
+    correct_predictions = sum(1 for p in performance_progression if p['correct'])
+    total_predictions = len(performance_progression)
+    
+    print(f"  Correct Predictions: {correct_predictions}/{total_predictions} ({correct_predictions/total_predictions:.1%})")
+    
+    avg_confidence_improvement = np.mean([
+        p['confidence_after'] - p['confidence_before'] 
+        for p in performance_progression
+    ])
+    print(f"  Average Confidence Change: {avg_confidence_improvement:+.3f}")
+    
+    # Analyze performance by correctness
+    correct_scenarios = [p for p in performance_progression if p['correct']]
+    incorrect_scenarios = [p for p in performance_progression if not p['correct']]
+    
+    if correct_scenarios:
+        avg_correct_score = np.mean([p['score'] for p in correct_scenarios])
+        print(f"  Average Score (Correct): {avg_correct_score:.3f}")
+    
+    if incorrect_scenarios:
+        avg_incorrect_score = np.mean([p['score'] for p in incorrect_scenarios])
+        print(f"  Average Score (Incorrect): {avg_incorrect_score:.3f}")
+
+def run_comprehensive_evaluation(classifier: EnhancedInputClassifier, results: List[Dict]):
+    """Run comprehensive evaluation of all classifier features"""
+    
+    print(f"\n🎯 Comprehensive Classifier Evaluation")
+    print("=" * 45)
+    
+    # Feature analysis
+    print("🔍 Feature Analysis Summary:")
+    
+    # Traditional vs Enhanced performance
+    traditional_confidences = [r['traditional_confidence'] for r in results if r['traditional_confidence'] > 0]
+    manifold_confidences = [r['manifold_confidence'] for r in results if r['manifold_confidence'] > 0]
+    
+    if traditional_confidences and manifold_confidences:
+        trad_avg = np.mean(traditional_confidences)
+        manifold_avg = np.mean(manifold_confidences)
+        improvement = ((manifold_avg - trad_avg) / trad_avg) * 100
+        
+        print(f"  Traditional Method Average: {trad_avg:.3f}")
+        print(f"  Enhanced Method Average: {manifold_avg:.3f}")
+        print(f"  Performance Improvement: {improvement:+.1f}%")
+    
+    # GloVe semantic analysis summary
+    glove_coherences = [r['glove_coherence'] for r in results]
+    glove_norms = [r['glove_embedding_norm'] for r in results]
+    
+    print(f"\n🎭 GloVe Embeddings Summary:")
+    print(f"  Average Semantic Coherence: {np.mean(glove_coherences):.3f}")
+    print(f"  Average Embedding Strength: {np.mean(glove_norms):.3f}")
+    print(f"  Embeddings Used: {classifier.glove_embeddings.is_loaded}")
+    print(f"  Vocabulary Size: {len(classifier.glove_embeddings.vocab)}")
+    
+    # Manifold learning summary
+    manifold_types = [r['best_manifold'] for r in results]
+    unique_manifolds = set(manifold_types)
+    
+    print(f"\n🌐 Manifold Learning Summary:")
+    print(f"  Unique Manifolds Used: {len(unique_manifolds)}")
+    print(f"  Most Common Manifold: {max(set(manifold_types), key=manifold_types.count)}")
+    
+    # Performance by complexity
+    complexities = [r['complexity'] for r in results]
+    confidences = [r['confidence'] for r in results]
+    
+    # Divide into low, medium, high complexity
+    complexity_threshold_low = np.percentile(complexities, 33)
+    complexity_threshold_high = np.percentile(complexities, 67)
+    
+    low_complexity_results = [r for r in results if r['complexity'] <= complexity_threshold_low]
+    medium_complexity_results = [r for r in results if complexity_threshold_low < r['complexity'] <= complexity_threshold_high]
+    high_complexity_results = [r for r in results if r['complexity'] > complexity_threshold_high]
+    
+    print(f"\n📊 Performance by Complexity Level:")
+    for category, category_results in [
+        ("Low", low_complexity_results),
+        ("Medium", medium_complexity_results), 
+        ("High", high_complexity_results)
+    ]:
+        if category_results:
+            avg_confidence = np.mean([r['confidence'] for r in category_results])
+            avg_uncertainty = np.mean([r['uncertainty'] for r in category_results])
+            print(f"  {category:6} Complexity: Confidence={avg_confidence:.3f}, Uncertainty={avg_uncertainty:.3f} ({len(category_results)} cases)")
 
 def main():
     """Main demonstration function"""
     
-    print("🚀 Enhanced Input Classifier with TF-IDF + GloVe Demo")
+    print("🚀 Complete Enhanced Input Classifier Demo")
+    print("🔥 TF-IDF + GloVe + Manifold Learning Integration")
     print("=" * 65)
     print("Features demonstrated:")
     print("• Traditional pattern-based classification")
     print("• TF-IDF vectorization for lexical features")
     print("• GloVe embeddings for semantic understanding")
-    print("• Manifold learning integration")
-    print("• Uncertainty quantification")
+    print("• Manifold learning with geometric spaces")
+    print("• Uncertainty quantification and confidence scoring")
     print("• Semantic coherence analysis")
-    print("• Online learning and feedback")
+    print("• Online learning and performance feedback")
     print("• Multi-modal feature fusion")
+    print("• Comprehensive performance analysis")
     print("=" * 65)
     
     try:
-        # Step 1: Demonstrate enhanced classification
-        print("\n🎯 Step 1: Enhanced Classification with GloVe")
+        # Step 1: Enhanced classification demonstration
+        print("\n🎯 Step 1: Enhanced Classification with Multi-Modal Features")
         results, classifier = demonstrate_enhanced_classification()
         
         # Step 2: GloVe semantic analysis
         print("\n🎯 Step 2: GloVe Semantic Analysis")
         demonstrate_glove_semantic_analysis(classifier)
         
-        # Step 3: Analyze performance
+        # Step 3: Performance analysis
         print("\n🎯 Step 3: Performance Analysis")
         analyze_classifier_performance(results, classifier)
         
-        # Step 4: Create visualizations
-        print("\n🎯 Step 4: Visualization")
-        create_visualization(results)
+        # Step 4: Comprehensive visualization
+        print("\n🎯 Step 4: Comprehensive Visualization")
+        create_comprehensive_visualization(results)
         
-        # Step 5: Demonstrate online learning
-        print("\n🎯 Step 5: Online Learning")
+        # Step 5: Online learning demonstration
+        print("\n🎯 Step 5: Online Learning and Adaptation")
         demonstrate_online_learning(classifier)
         
-        # Final summary
-        print(f"\n🎉 Enhanced Classifier with GloVe Demo Complete!")
-        print("=" * 55)
-        print("✅ Demonstrated TF-IDF + GloVe feature fusion")
-        print("✅ Showed semantic coherence analysis")
-        print("✅ Analyzed word-level similarities")
-        print("✅ Visualized multi-modal classifications")
-        print("✅ Demonstrated online learning")
+        # Step 6: Comprehensive evaluation
+        print("\n🎯 Step 6: Comprehensive Evaluation")
+        run_comprehensive_evaluation(classifier, results)
         
-        # Key insights
-        print(f"\n💡 Key Insights:")
+        # Final summary and insights
+        print(f"\n🎉 Complete Enhanced Classifier Demo Finished!")
+        print("=" * 55)
+        print("✅ Demonstrated multi-modal feature fusion (TF-IDF + GloVe)")
+        print("✅ Showed geometric manifold learning integration")
+        print("✅ Analyzed semantic coherence and word relationships")
+        print("✅ Visualized comprehensive performance metrics")
+        print("✅ Demonstrated adaptive online learning")
+        print("✅ Provided interpretable confidence and uncertainty scores")
+        
+        # Key insights and recommendations
+        print(f"\n💡 Key Insights and Recommendations:")
         final_stats = classifier.get_classification_statistics()
         
         if final_stats.get('total_predictions', 0) > 0:
-            print(f"   • Classification accuracy: {final_stats['overall_accuracy']:.2%}")
+            print(f"   • Final classification accuracy: {final_stats['overall_accuracy']:.2%}")
         
-        # GloVe-specific insights
+        # Multi-modal feature insights
         avg_coherence = np.mean([r['glove_coherence'] for r in results])
         avg_embedding_strength = np.mean([r['glove_embedding_norm'] for r in results])
+        avg_confidence = np.mean([r['confidence'] for r in results])
+        avg_uncertainty = np.mean([r['uncertainty'] for r in results])
         
         print(f"   • Average semantic coherence: {avg_coherence:.3f}")
-        print(f"   • Average embedding strength: {avg_embedding_strength:.3f}")
+        print(f"   • Average classification confidence: {avg_confidence:.3f}")
+        print(f"   • Average uncertainty estimate: {avg_uncertainty:.3f}")
         
-        # Feature fusion benefits
+        # Method comparison insights
         traditional_better = sum(1 for r in results 
                                if r.get('traditional_confidence', 0) > r.get('manifold_confidence', 0))
         manifold_better = sum(1 for r in results 
                             if r.get('manifold_confidence', 0) > r.get('traditional_confidence', 0))
         
-        print(f"   • Traditional method better: {traditional_better} cases")
-        print(f"   • Manifold+GloVe better: {manifold_better} cases")
-        print(f"   • Multi-modal feature fusion provides richer analysis")
+        if traditional_better + manifold_better > 0:
+            manifold_win_rate = manifold_better / (traditional_better + manifold_better)
+            print(f"   • Enhanced method win rate: {manifold_win_rate:.1%}")
+        
+        print(f"   • Multi-modal approach provides richer semantic understanding")
+        print(f"   • Online learning enables continuous improvement")
+        print(f"   • Uncertainty quantification helps identify difficult cases")
+        print(f"   • Geometric manifolds capture task-specific structures")
+        
+        # Usage recommendations
+        print(f"\n🔧 Usage Recommendations:")
+        print(f"   • Use GloVe embeddings for semantic similarity tasks")
+        print(f"   • Monitor uncertainty scores for active learning")
+        print(f"   • Apply different manifolds based on task characteristics")
+        print(f"   • Leverage online learning for domain adaptation")
+        print(f"   • Combine traditional and geometric features for robustness")
         
         return {
             'results': results,
             'classifier': classifier,
-            'final_stats': final_stats
+            'final_stats': final_stats,
+            'demo_complete': True
         }
         
     except Exception as e:
@@ -720,7 +906,15 @@ def main():
         return None
 
 if __name__ == "__main__":
-    # Set random seed for reproducibility
+    # Set random seed for reproducible results
     np.random.seed(42)
     
-    main()
+    demo_results = main()
+    
+    if demo_results:
+        print(f"\n✨ Demo completed successfully!")
+        print(f"📁 Generated files:")
+        print(f"   • comprehensive_classifier_analysis.png")
+        print(f"   • Classifier state saved in demo_results")
+    else:
+        print(f"\n❌ Demo failed to complete")
