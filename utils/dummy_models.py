@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import copy
 from typing import List
-from ..core.types import ModelSpec, TaskType
+from core.types import ModelSpec, TaskType
 
 # Mock model classes for demonstration
 class MockLlamaModel(nn.Module):
