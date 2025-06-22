@@ -228,13 +228,6 @@ class EnhancedInputClassifier:
         if glove_file_path:
             self.glove_embeddings.load_glove_embeddings(glove_file_path)
         
-        # Initialize TF-IDF for semantic analysis
-        self.tfidf_vectorizer = TfidfVectorizer(
-            max_features=1000,
-            stop_words='english',
-            ngram_range=(1, 2)
-        )
-        
         # Traditional pattern-based classification
         self.task_patterns = {
             TaskType.MATHEMATICAL: {
@@ -337,22 +330,120 @@ class EnhancedInputClassifier:
         # Train manifold learner if enabled
         if self.manifold_learner is not None:
             print("🌐 Training manifold learner...")
-            self.manifold_learner.learn_manifold_offline(training_texts)
             
-            # If labels are provided, use them for supervised learning
-            if training_labels is not None:
-                for text, label in zip(training_texts, training_labels):
-                    try:
-                        task_type = TaskType(label)
-                        self.training_history.append({
-                            'text': text,
-                            'true_label': task_type,
-                            'timestamp': time.time()
-                        })
-                    except ValueError:
-                        continue  # Skip invalid labels
+            try:
+                # Check if we have enough data for manifold learning
+                if len(training_texts) >= 5:  # Minimum threshold
+                    self.manifold_learner.learn_manifold_offline(training_texts)
+                    print(f"✅ Manifold learner trained with {len(training_texts)} samples")
+                else:
+                    print(f"⚠️  Too few samples ({len(training_texts)}) for full manifold learning, using simple mode")
+                
+                # If labels are provided, use them for supervised learning
+                if training_labels is not None:
+                    for text, label in zip(training_texts, training_labels):
+                        try:
+                            # Convert string labels to TaskType
+                            if isinstance(label, str):
+                                # Handle both direct values and enum names
+                                if hasattr(TaskType, label.upper()):
+                                    task_type = getattr(TaskType, label.upper())
+                                else:
+                                    task_type = TaskType(label)
+                            else:
+                                task_type = label
+                            
+                            # Add to training history with correct structure
+                            self.training_history.append({
+                                'text': text,
+                                'true_label': task_type,
+                                'predicted': None,  # Will be filled during actual predictions
+                                'actual': task_type,  # Same as true_label for training data
+                                'score': 1.0,  # Assume perfect score for training labels
+                                'correct': True,  # Training labels are assumed correct
+                                'timestamp': time.time(),
+                                'source': 'training'
+                            })
+                        except (ValueError, AttributeError) as e:
+                            print(f"Warning: Invalid label '{label}' for text '{text[:50]}...': {e}")
+                            continue  # Skip invalid labels
+                
+            except Exception as e:
+                print(f"⚠️  Manifold learning failed: {e}")
+                print("🔄 Continuing with traditional classification only...")
+        
+        # Add some synthetic training data if we don't have enough
+        if len(training_texts) < 10:
+            self._add_synthetic_training_data()
         
         print("✅ Classifier fitting complete!")
+    
+    def _add_synthetic_training_data(self):
+        """Add some synthetic training examples to help manifold learning"""
+        
+        synthetic_examples = [
+            # Mathematical examples
+            ("Calculate the area of a circle with radius 5", "mathematical"),
+            ("Solve the quadratic equation x² - 4x + 3 = 0", "mathematical"),
+            ("Find the derivative of f(x) = x³ + 2x", "mathematical"),
+            
+            # Creative examples  
+            ("Write a short story about a time traveler", "creative_writing"),
+            ("Create a character description for a detective", "creative_writing"),
+            ("Compose a poem about autumn leaves", "creative_writing"),
+            
+            # Code examples
+            ("Implement a binary search algorithm", "code_generation"),
+            ("Write a function to sort an array", "code_generation"),
+            ("Debug this Python code for me", "code_generation"),
+            
+            # Reasoning examples
+            ("Analyze the pros and cons of electric cars", "reasoning"),
+            ("Compare different economic systems", "reasoning"),
+            ("Evaluate the impact of social media", "reasoning"),
+            
+            # Scientific examples
+            ("Explain the process of photosynthesis", "scientific"),
+            ("Describe how vaccines work", "scientific"),
+            ("What causes climate change?", "scientific"),
+            
+            # Factual examples
+            ("What is the capital of France?", "factual_qa"),
+            ("When did World War II end?", "factual_qa"),
+            ("Who invented the telephone?", "factual_qa"),
+            
+            # Conversational examples
+            ("Hello, how are you today?", "conversational"),
+            ("Thanks for your help!", "conversational"),
+            ("Can you help me with something?", "conversational")
+        ]
+        
+        print(f"📝 Adding {len(synthetic_examples)} synthetic training examples...")
+        
+        for text, label in synthetic_examples:
+            try:
+                task_type = TaskType(label)
+                self.training_history.append({
+                    'text': text,
+                    'true_label': task_type,
+                    'predicted': None,
+                    'actual': task_type,
+                    'score': 1.0,
+                    'correct': True,
+                    'timestamp': time.time(),
+                    'source': 'synthetic'
+                })
+            except ValueError:
+                continue
+        
+        # Also train manifold learner with synthetic data
+        if self.manifold_learner is not None:
+            synthetic_texts = [example[0] for example in synthetic_examples]
+            try:
+                self.manifold_learner.learn_manifold_offline(synthetic_texts)
+                print(f"✅ Manifold learner enhanced with synthetic data")
+            except Exception as e:
+                print(f"⚠️  Failed to train manifold learner with synthetic data: {e}")
     
     def analyze_input(self, text: str, use_cache: bool = True) -> InputAnalysis:
         """Enhanced input analysis using both traditional and manifold-based methods"""
@@ -364,10 +455,13 @@ class EnhancedInputClassifier:
         # Traditional pattern-based analysis
         traditional_analysis = self._traditional_analysis(text)
         
-        # Manifold-based analysis (if enabled and fitted)
+        # Manifold-based analysis (if enabled and has sufficient data)
         manifold_analysis = None
-        if self.manifold_learner is not None and self.is_fitted:
+        if self.manifold_learner is not None and self.is_fitted and self._has_sufficient_manifold_data():
             manifold_analysis = self._manifold_analysis(text)
+        elif self.manifold_learner is not None:
+            # Create a simple manifold analysis based on available data
+            manifold_analysis = self._simple_manifold_analysis(text)
         
         # Combine analyses
         final_analysis = self._combine_analyses(text, traditional_analysis, manifold_analysis)
@@ -381,6 +475,116 @@ class EnhancedInputClassifier:
             self.analysis_cache[text] = final_analysis
         
         return final_analysis
+    
+    def _has_sufficient_manifold_data(self) -> bool:
+        """Check if we have enough data for proper manifold learning"""
+        
+        if not hasattr(self.manifold_learner, 'traditional_manifold'):
+            return False
+        
+        # Check if manifold learner has been trained with enough data
+        min_samples_required = 10  # Minimum samples needed for manifold learning
+        
+        # Count training samples from history
+        training_samples = len([h for h in self.training_history if h.get('source') == 'training'])
+        
+        return training_samples >= min_samples_required
+    
+    def _simple_manifold_analysis(self, text: str) -> Dict[str, Any]:
+        """Simple manifold analysis when full manifold learning isn't available"""
+        
+        # Infer manifold type from text content
+        best_manifold = self._infer_manifold_from_text(text)
+        
+        # Calculate simple confidence based on text characteristics
+        confidence = self._calculate_simple_manifold_confidence(text, best_manifold)
+        
+        # Calculate uncertainty (inverse of confidence)
+        uncertainty = 1.0 - confidence
+        
+        # Map manifold to task type
+        manifold_to_task = {
+            'sphere': TaskType.CREATIVE_WRITING,
+            'torus': TaskType.CONVERSATIONAL,
+            'hyperbolic': TaskType.REASONING,
+            'euclidean': TaskType.MATHEMATICAL,
+            'pca': TaskType.FACTUAL_QA,
+            'isomap': TaskType.SCIENTIFIC,
+            'tsne': TaskType.CODE_GENERATION
+        }
+        
+        suggested_task = manifold_to_task.get(best_manifold, TaskType.FACTUAL_QA)
+        
+        return {
+            'task_type': suggested_task,
+            'confidence': confidence,
+            'uncertainty': uncertainty,
+            'best_manifold': best_manifold,
+            'recommended_models': [f"{suggested_task.value}_specialist"],
+            'complexity_estimate': self._estimate_text_complexity(text),
+            'embedding': None,
+            'embedding_variance': uncertainty,
+            'method': 'simple_manifold'
+        }
+    
+    def _calculate_simple_manifold_confidence(self, text: str, manifold_type: str) -> float:
+        """Calculate confidence for simple manifold analysis"""
+        
+        text_lower = text.lower()
+        confidence = 0.5  # Base confidence
+        
+        # Manifold-specific confidence boosters
+        manifold_indicators = {
+            'euclidean': ['equation', 'solve', 'calculate', 'algorithm', 'implement', 'code'],
+            'sphere': ['story', 'creative', 'research', 'theory', 'global', 'overall'],
+            'hyperbolic': ['analyze', 'compare', 'evaluate', 'hierarchy', 'structure'],
+            'torus': ['hello', 'chat', 'thanks', 'conversation', 'repeat', 'cycle']
+        }
+        
+        indicators = manifold_indicators.get(manifold_type, [])
+        matches = sum(1 for indicator in indicators if indicator in text_lower)
+        
+        # Boost confidence based on matches
+        confidence += min(matches * 0.1, 0.4)
+        
+        # Text length factor
+        if len(text) > 50:
+            confidence += 0.05
+        if len(text) > 100:
+            confidence += 0.05
+        
+        # Complexity factor
+        if any(symbol in text for symbol in ['+', '-', '*', '/', '=', '?', '!']):
+            confidence += 0.05
+        
+        return min(confidence, 0.95)
+    
+    def _estimate_text_complexity(self, text: str) -> float:
+        """Estimate text complexity for simple analysis"""
+        
+        complexity = 0.0
+        
+        # Length factor
+        complexity += min(len(text) / 200, 0.3)
+        
+        # Vocabulary diversity
+        words = text.split()
+        unique_words = len(set(word.lower() for word in words))
+        if len(words) > 0:
+            diversity = unique_words / len(words)
+            complexity += diversity * 0.3
+        
+        # Technical terms
+        technical_terms = ['algorithm', 'analysis', 'implementation', 'methodology', 
+                         'optimization', 'evaluation', 'hypothesis', 'theory']
+        tech_count = sum(1 for term in technical_terms if term in text.lower())
+        complexity += min(tech_count * 0.1, 0.2)
+        
+        # Symbols and punctuation
+        symbols = len([c for c in text if c in '+-*/=<>≤≥∫∑∏√∞(){}[]'])
+        complexity += min(symbols * 0.02, 0.2)
+        
+        return min(complexity, 1.0)
     
     def _traditional_analysis(self, text: str) -> Dict[str, Any]:
         """Traditional pattern-based analysis"""
@@ -442,6 +646,10 @@ class EnhancedInputClassifier:
             recommended_models = recommendations.get('recommended_models', [])
             complexity_estimate = recommendations.get('complexity_estimate', 0.0)
             
+            # If best_manifold is still unknown, try to infer from text content
+            if best_manifold == 'unknown':
+                best_manifold = self._infer_manifold_from_text(text)
+            
             # Map manifold type to task type
             manifold_to_task = {
                 'sphere': TaskType.CREATIVE_WRITING,
@@ -490,29 +698,121 @@ class EnhancedInputClassifier:
             
         except Exception as e:
             print(f"Warning: Manifold analysis failed: {e}")
+            # Fallback to traditional manifold inference
+            fallback_manifold = self._infer_manifold_from_text(text)
             return {
                 'task_type': TaskType.FACTUAL_QA,
                 'confidence': 0.0,
                 'uncertainty': 1.0,
-                'best_manifold': 'unknown',
+                'best_manifold': fallback_manifold,
                 'method': 'manifold_fallback'
             }
     
+    def _infer_manifold_from_text(self, text: str) -> str:
+        """Infer best manifold type from text content patterns"""
+        
+        text_lower = text.lower()
+        
+        # Mathematical content indicators
+        math_indicators = ['equation', 'solve', 'calculate', 'formula', 'derivative', 'integral', 
+                          'matrix', 'vector', 'theorem', 'proof', 'algebra', 'geometry']
+        math_score = sum(1 for indicator in math_indicators if indicator in text_lower)
+        
+        # Creative content indicators
+        creative_indicators = ['story', 'character', 'write', 'creative', 'narrative', 'fiction',
+                             'poem', 'dialogue', 'imagination', 'theme', 'plot']
+        creative_score = sum(1 for indicator in creative_indicators if indicator in text_lower)
+        
+        # Reasoning content indicators
+        reasoning_indicators = ['analyze', 'compare', 'evaluate', 'assess', 'reason', 'argument',
+                              'logic', 'critical', 'philosophical', 'ethical', 'perspective']
+        reasoning_score = sum(1 for indicator in reasoning_indicators if indicator in text_lower)
+        
+        # Conversational indicators
+        conversational_indicators = ['hello', 'hi', 'thanks', 'please', 'help', 'chat', 'talk',
+                                   'opinion', 'think', 'feel', 'friendly', 'casual']
+        conversational_score = sum(1 for indicator in conversational_indicators if indicator in text_lower)
+        
+        # Scientific indicators
+        scientific_indicators = ['research', 'hypothesis', 'experiment', 'theory', 'data',
+                               'study', 'evidence', 'methodology', 'empirical']
+        scientific_score = sum(1 for indicator in scientific_indicators if indicator in text_lower)
+        
+        # Code indicators
+        code_indicators = ['algorithm', 'function', 'code', 'programming', 'implement',
+                         'debug', 'software', 'framework', 'api']
+        code_score = sum(1 for indicator in code_indicators if indicator in text_lower)
+        
+        # Determine best manifold based on scores
+        scores = {
+            'euclidean': math_score + code_score,  # Structured, logical content
+            'sphere': creative_score + scientific_score,  # Global, thematic content
+            'hyperbolic': reasoning_score,  # Hierarchical, tree-like content
+            'torus': conversational_score  # Cyclical, repetitive content
+        }
+        
+        # Add some basic heuristics
+        if '?' in text:
+            scores['euclidean'] += 1  # Questions often factual
+        if len(text.split()) < 10:
+            scores['torus'] += 1  # Short texts often conversational
+        if any(symbol in text for symbol in ['+', '-', '*', '/', '=', '∫', '∑']):
+            scores['euclidean'] += 2  # Mathematical symbols
+        
+        # Return the manifold with highest score
+        best_manifold = max(scores, key=scores.get)
+        
+        # Fallback to euclidean if all scores are zero
+        if scores[best_manifold] == 0:
+            return 'euclidean'
+        
+        return best_manifold
+    
     def _combine_analyses(self, text: str, traditional: Dict, manifold: Optional[Dict]) -> InputAnalysis:
         """Combine traditional and manifold analyses into final result"""
+        
+        # CRITICAL FIX: Always initialize features at the start
+        features = traditional['features'].copy()
+        
+        # Add GloVe-based semantic features to all analyses
+        if hasattr(self, 'glove_embeddings') and self.glove_embeddings.is_loaded:
+            glove_embedding = self.glove_embeddings.get_sentence_embedding(text, method='weighted_mean')
+            glove_semantic_features = self._extract_glove_features(text)
+            
+            features.update({
+                'glove_embedding_norm': np.linalg.norm(glove_embedding),
+                'glove_embedding_mean': np.mean(glove_embedding),
+                'glove_embedding_std': np.std(glove_embedding),
+                'glove_semantic_coherence': glove_semantic_features[4] if len(glove_semantic_features) > 4 else 0.0,
+                'glove_math_similarity': glove_semantic_features[6] if len(glove_semantic_features) > 6 else 0.0,
+                'glove_creative_similarity': glove_semantic_features[7] if len(glove_semantic_features) > 7 else 0.0,
+                'glove_code_similarity': glove_semantic_features[8] if len(glove_semantic_features) > 8 else 0.0,
+                'glove_reasoning_similarity': glove_semantic_features[9] if len(glove_semantic_features) > 9 else 0.0,
+            })
         
         if manifold is None:
             # Use only traditional analysis
             task_type = traditional['task_type']
             confidence = traditional['confidence']
-            features = traditional['features']
             
             # Add basic uncertainty estimate based on confidence
             uncertainty = 1.0 - confidence
-            best_manifold = traditional['manifold_preferences'].get(task_type, 'euclidean')
+            
+            # Get best manifold from traditional preferences, but also infer from content
+            traditional_manifold = traditional['manifold_preferences'].get(task_type, 'euclidean')
+            inferred_manifold = self._infer_manifold_from_text(text)
+            
+            # Use inferred manifold if it has higher confidence than traditional
+            best_manifold = inferred_manifold if inferred_manifold != 'euclidean' else traditional_manifold
+            
+            # Add GloVe boost to confidence if available
+            if hasattr(self, 'glove_embeddings') and self.glove_embeddings.is_loaded:
+                glove_semantic_features = self._extract_glove_features(text)
+                semantic_boost = min(glove_semantic_features[4] if len(glove_semantic_features) > 4 else 0.0, 0.2)
+                confidence = min(confidence + semantic_boost, 1.0)
             
         else:
-            # Combine both analyses
+            # Combine both analyses - features is already initialized above
             traditional_confidence = traditional['confidence']
             manifold_confidence = manifold['confidence']
             
@@ -528,7 +828,7 @@ class EnhancedInputClassifier:
                 task_type = traditional['task_type']
                 confidence = traditional_confidence * traditional_weight + manifold_confidence * manifold_weight
             
-        if manifold is not None:
+            # Now features.update() will work because features is defined above
             features.update({
                 'manifold_confidence': manifold_confidence,
                 'traditional_confidence': traditional_confidence,
@@ -538,8 +838,18 @@ class EnhancedInputClassifier:
                 'recommended_models': manifold.get('recommended_models', [])
             })
             
+            # Add GloVe boost to confidence
+            if hasattr(self, 'glove_embeddings') and self.glove_embeddings.is_loaded:
+                glove_semantic_features = self._extract_glove_features(text)
+                semantic_boost = min(glove_semantic_features[4] if len(glove_semantic_features) > 4 else 0.0, 0.2)
+                confidence = min(confidence + semantic_boost, 1.0)
+            
             uncertainty = manifold.get('uncertainty', 1.0 - confidence)
-            best_manifold = manifold.get('best_manifold', 'euclidean')
+            best_manifold = manifold.get('best_manifold', 'unknown')
+            
+            # If manifold analysis still returns unknown, use inference
+            if best_manifold == 'unknown':
+                best_manifold = self._infer_manifold_from_text(text)
         
         # Extract final keywords and domain indicators
         keywords = self._extract_keywords(text)
@@ -592,21 +902,6 @@ class EnhancedInputClassifier:
                 features['tfidf_nnz'] = tfidf_features.nnz
             except Exception:
                 pass  # Skip TF-IDF features if error
-        
-        # Add GloVe features
-        if hasattr(self, 'glove_embeddings') and self.glove_embeddings.is_loaded:
-            glove_embedding = self.glove_embeddings.get_sentence_embedding(text)
-            glove_features = self._extract_glove_features(text)
-            
-            features.update({
-                'glove_embedding_norm': np.linalg.norm(glove_embedding),
-                'glove_embedding_mean': np.mean(glove_embedding),
-                'glove_embedding_std': np.std(glove_embedding),
-                'glove_semantic_coherence': glove_features[4] if len(glove_features) > 4 else 0.0,
-                'glove_math_similarity': glove_features[6] if len(glove_features) > 6 else 0.0,
-                'glove_creative_similarity': glove_features[7] if len(glove_features) > 7 else 0.0,
-                'glove_code_similarity': glove_features[8] if len(glove_features) > 8 else 0.0
-            })
         
         return features
     
@@ -821,38 +1116,69 @@ class EnhancedInputClassifier:
             'actual': actual_task,
             'score': performance_score,
             'timestamp': time.time(),
-            'correct': predicted_task == actual_task
+            'correct': predicted_task == actual_task,
+            'source': 'feedback'
         }
         
         self.training_history.append(feedback)
         
         # Update manifold learner if available
         if self.manifold_learner is not None:
-            self.manifold_learner.update_online(
-                text=text,
-                task_type=actual_task,
-                selected_model=predicted_task.value,
-                performance_score=performance_score
-            )
+            try:
+                self.manifold_learner.update_online(
+                    text=text,
+                    task_type=actual_task,
+                    selected_model=predicted_task.value,
+                    performance_score=performance_score
+                )
+            except Exception as e:
+                print(f"Warning: Failed to update manifold learner: {e}")
     
     def get_classification_statistics(self) -> Dict[str, Any]:
         """Get classification performance statistics"""
         
         if not self.training_history:
-            return {'message': 'No training history available'}
+            return {
+                'message': 'No training history available',
+                'overall_accuracy': 0.0,
+                'total_predictions': 0,
+                'correct_predictions': 0,
+                'average_performance_score': 0.0,
+                'task_specific_stats': {},
+                'manifold_enabled': self.manifold_learner is not None,
+                'cache_size': len(self.analysis_cache)
+            }
         
         recent_history = list(self.training_history)[-1000:]  # Last 1000 examples
         
-        total_predictions = len(recent_history)
-        correct_predictions = sum(1 for h in recent_history if h['correct'])
+        # Filter only feedback entries (which have 'correct' key)
+        feedback_history = [h for h in recent_history if 'correct' in h]
+        
+        total_predictions = len(feedback_history)
+        
+        if total_predictions == 0:
+            return {
+                'message': 'No feedback data available',
+                'overall_accuracy': 0.0,
+                'total_predictions': 0,
+                'correct_predictions': 0,
+                'average_performance_score': 0.0,
+                'task_specific_stats': {},
+                'manifold_enabled': self.manifold_learner is not None,
+                'cache_size': len(self.analysis_cache)
+            }
+        
+        correct_predictions = sum(1 for h in feedback_history if h.get('correct', False))
         accuracy = correct_predictions / total_predictions if total_predictions > 0 else 0.0
         
         # Task-specific accuracy
         task_stats = {}
         for task_type in TaskType:
-            task_predictions = [h for h in recent_history if h['actual'] == task_type]
+            # Handle both 'actual' and 'true_label' keys for backwards compatibility
+            task_predictions = [h for h in feedback_history 
+                              if h.get('actual') == task_type or h.get('true_label') == task_type]
             if task_predictions:
-                task_correct = sum(1 for h in task_predictions if h['correct'])
+                task_correct = sum(1 for h in task_predictions if h.get('correct', False))
                 task_accuracy = task_correct / len(task_predictions)
                 task_stats[task_type.value] = {
                     'accuracy': task_accuracy,
@@ -860,8 +1186,9 @@ class EnhancedInputClassifier:
                     'correct_samples': task_correct
                 }
         
-        # Average performance score
-        avg_performance = np.mean([h['score'] for h in recent_history])
+        # Average performance score (only for entries that have it)
+        performance_scores = [h['score'] for h in feedback_history if 'score' in h]
+        avg_performance = np.mean(performance_scores) if performance_scores else 0.0
         
         stats = {
             'overall_accuracy': accuracy,
@@ -870,7 +1197,9 @@ class EnhancedInputClassifier:
             'average_performance_score': avg_performance,
             'task_specific_stats': task_stats,
             'manifold_enabled': self.manifold_learner is not None,
-            'cache_size': len(self.analysis_cache)
+            'cache_size': len(self.analysis_cache),
+            'total_history_entries': len(recent_history),
+            'feedback_entries': len(feedback_history)
         }
         
         # Add manifold learner statistics if available

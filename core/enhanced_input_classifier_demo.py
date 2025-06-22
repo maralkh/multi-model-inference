@@ -7,9 +7,9 @@ from typing import List, Dict, Any
 import time
 from sklearn.metrics.pairwise import cosine_similarity
 
-from core.input_classifier import EnhancedInputClassifier
-from core.types import TaskType, ManifoldLearningConfig
-from core.glove_embeddings import GloVeEmbeddings
+from .enhanced_input_classifier import EnhancedInputClassifier
+from .types import TaskType, ManifoldLearningConfig
+from .glove_embeddings import GloVeEmbeddings
 
 def demonstrate_enhanced_classification():
     """Demonstrate enhanced classification capabilities"""
