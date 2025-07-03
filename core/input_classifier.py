@@ -9,7 +9,7 @@ from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import deque
 
-from .types import TaskType, InputAnalysis
+from .input_types import TaskType, InputAnalysis
 
 class InputClassifier:
     """Analyzes input text to determine task type and characteristics"""

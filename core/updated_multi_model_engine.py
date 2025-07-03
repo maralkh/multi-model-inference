@@ -15,7 +15,7 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import original core components
-from core.types import TaskType, InputAnalysis, ModelSpec, ManifoldLearningConfig
+from core.input_types import TaskType, InputAnalysis, ModelSpec, ManifoldLearningConfig
 from core.enhanced_input_classifier import EnhancedInputClassifier
 from core.manifold_learner import ManifoldLearner
 from core.geometric_embeddings import GeometricBayesianManifoldLearner

@@ -176,7 +176,7 @@ class UltimateSafeEngine:
             
             # Ultimate fallback
             from core.fixed_input_analysis import FixedInputAnalysis
-            from core.types import TaskType
+            from core.input_types import TaskType
             
             fallback_analysis = FixedInputAnalysis(
                 task_type=TaskType.CONVERSATIONAL,

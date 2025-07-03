@@ -11,7 +11,7 @@ from core.geometric_embeddings import (
     SphereManifold, TorusManifold, HyperbolicManifold
 )
 from core.manifold_learner import ManifoldLearner
-from core.types import ManifoldLearningConfig, TaskType
+from core.input_types import ManifoldLearningConfig, TaskType
 from core.multi_model_engine import MultiModelInferenceEngine
 from utils.dummy_models import create_specialized_models, DummyTokenizer
 

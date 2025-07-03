@@ -12,7 +12,7 @@ from collections import defaultdict
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.types import TaskType, InputAnalysis
+from core.input_types import TaskType, InputAnalysis
 
 @dataclass
 class FixedInputAnalysis:

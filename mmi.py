@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from core.multi_model_engine import MultiModelInferenceEngine
-from core.types import TaskType
+from core.input_types import TaskType
 from utils.dummy_models import create_specialized_models, DummyTokenizer
 
 def demonstrate_multi_model_inference():

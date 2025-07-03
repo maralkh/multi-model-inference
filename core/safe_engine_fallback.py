@@ -14,7 +14,7 @@ from collections import defaultdict
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import core components
-from core.types import TaskType, InputAnalysis, ModelSpec
+from core.input_types import TaskType, InputAnalysis, ModelSpec
 from core.input_classifier import InputClassifier
 from core.multi_model_engine import MultiModelInferenceEngine
 from core.updated_multi_model_engine import UpdatedMultiModelEngine
@@ -95,7 +95,7 @@ class SafeMultiModelEngine:
             
             # Create engine
             model_list = list(self.models.values())
-            self.engine = UpdatedMultiModelEngine(model_list, self.tokenizer)
+            self.engine = MultiModelInferenceEngine(model_list, self.tokenizer)
             
             logger.info(f"✅ Real models engine ready with {len(self.models)} models")
             return True

@@ -9,7 +9,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from core.input_classifier import InputClassifier
-from core.types import TaskType
+from core.input_types import TaskType
 from core.multi_model_engine import MultiModelInferenceEngine
 from utils.dummy_models import create_specialized_models, DummyTokenizer
 

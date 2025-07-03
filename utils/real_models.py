@@ -10,7 +10,7 @@ from transformers import (
     AutoTokenizer, AutoModelForCausalLM,
     pipeline
 )
-from core.types import ModelSpec, TaskType
+from core.input_types import ModelSpec, TaskType
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)

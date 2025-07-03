@@ -17,7 +17,7 @@ import pickle
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import original components
-from core.types import TaskType, InputAnalysis, ManifoldLearningConfig
+from core.input_types import TaskType, InputAnalysis, ManifoldLearningConfig
 from core.enhanced_input_classifier import EnhancedInputClassifier
 from core.manifold_learner import ManifoldLearner
 from core.geometric_embeddings import GeometricBayesianManifoldLearner

@@ -12,7 +12,7 @@ import urllib.request
 import zipfile
 import os
 
-from .types import TaskType, InputAnalysis, ManifoldLearningConfig
+from .input_types import TaskType, InputAnalysis, ManifoldLearningConfig
 from .manifold_learner import ManifoldLearner
 from .geometric_embeddings import GeometricBayesianManifoldLearner
 

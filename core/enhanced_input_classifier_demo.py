@@ -8,7 +8,7 @@ import time
 from sklearn.metrics.pairwise import cosine_similarity
 
 from .enhanced_input_classifier import EnhancedInputClassifier
-from .types import TaskType, ManifoldLearningConfig
+from .input_types import TaskType, ManifoldLearningConfig
 from .glove_embeddings import GloVeEmbeddings
 
 def demonstrate_enhanced_classification():

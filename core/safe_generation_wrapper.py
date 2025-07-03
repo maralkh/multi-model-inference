@@ -150,7 +150,7 @@ class SafeGenerationWrapper:
                 return "unknown", analysis, 0.5
             else:
                 from core.fixed_input_analysis import FixedInputAnalysis
-                from core.types import TaskType
+                from core.input_types import TaskType
                 default_analysis = FixedInputAnalysis(
                     task_type=TaskType.CONVERSATIONAL,
                     confidence_score=0.5

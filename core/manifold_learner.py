@@ -17,7 +17,7 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 import re
 
-from .types import ManifoldLearningConfig, DataPoint, TaskType
+from .input_types import ManifoldLearningConfig, DataPoint, TaskType
 
 class ManifoldLearner:
     """Advanced manifold learning for input distribution analysis"""

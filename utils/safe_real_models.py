@@ -6,7 +6,7 @@ import torch.nn as nn
 import logging
 from typing import List, Dict, Optional
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from core.types import ModelSpec, TaskType
+from core.input_types import ModelSpec, TaskType
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
